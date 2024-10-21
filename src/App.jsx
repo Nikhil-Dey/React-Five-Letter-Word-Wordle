@@ -85,8 +85,8 @@ function Wordle(){
   const [currentRow, setCurrentRow] = useState([true, false, false, false, false, false]);
   const [gameStatus, setGameStatus] = useState(false);
   const [index, setIndex] = useState(0);
-  const [message, setMessage] = useState('');
-  const [targetWord, setTargetWord] = useState("Guess Five Letter Word");
+  const [message, setMessage] = useState('Guess Five Letter Word');
+  const [targetWord, setTargetWord] = useState('');
 
   useEffect(() => {
     async function getWord() {
