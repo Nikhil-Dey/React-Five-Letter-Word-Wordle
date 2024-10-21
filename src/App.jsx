@@ -1,15 +1,13 @@
 import "./App.css";
 import { useState, useEffect } from "react";
 
-const targetValue = "REACT";
-
 function Square({value, feedback}){
   return (
     <div className={`square ${feedback}`}>{value}</div>
   )
 }
 
-function Letter({active, gameStatus, handleGameStatus, index}){
+function Letter({active, handleGameStatus, index, targetValue, handleMessage}){
   const [letter, setLetter] = useState("");
   const [validated, setValidated] = useState(false);
 
@@ -26,6 +24,7 @@ function Letter({active, gameStatus, handleGameStatus, index}){
 
     function handleValidateString(){
       if (letter.length !== 5){
+        handleMessage('Enter All Five Letter Word');
         console.log('Please fill all the boxes in a row');
       }else {
         handleGameStatus(letter === targetValue)
@@ -35,8 +34,7 @@ function Letter({active, gameStatus, handleGameStatus, index}){
     }
   
     function handleKeyEvent(e){
-      console.log(e.key, active, gameStatus, index);
-      if(!active || gameStatus){
+      if(!active){
         return;
       }
       const key = e.key;
@@ -53,7 +51,7 @@ function Letter({active, gameStatus, handleGameStatus, index}){
     }
     window.addEventListener('keydown', handleKeyEvent);
     return () => window.removeEventListener('keydown', handleKeyEvent);
-  }, [letter, active, gameStatus]);
+  }, [letter, active]);
   
   function feedback(i){
     if(!validated){
@@ -77,31 +75,50 @@ function Letter({active, gameStatus, handleGameStatus, index}){
   )
 }
 
+async function fetchRandomWord() {
+  const response = await fetch("https://random-word-api.vercel.app/api?words=1&length=5&type=uppercase");
+  const data = await response.json();
+  return data[0];
+}
+
 function Wordle(){
   const [currentRow, setCurrentRow] = useState([true, false, false, false, false, false]);
   const [gameStatus, setGameStatus] = useState(false);
   const [index, setIndex] = useState(0);
+  const [message, setMessage] = useState('');
+  const [targetWord, setTargetWord] = useState("Guess Five Letter Word");
+
+  useEffect(() => {
+    async function getWord() {
+      const word = await fetchRandomWord(); // Fetch a random word
+      setTargetWord(word);
+    }
+    getWord();
+  }, []);
 
   function handleGameStatus(status){
     if(status){
-      setCurrentRow(Array(9).fill(false));
+      setCurrentRow(Array(6).fill(false));
       setGameStatus(status);
       setIndex(6);
+      setMessage('You Won')
     }else{
-      if (index === 6) return;
+      if (index === 6) {
+        setMessage(`Game Over! Your Word is ${targetWord}`);
+        return;
+      }
       setCurrentRow(currentRow.map((row, i) => i === index + 1 ? true : false));
       setIndex(index + 1);
+      setMessage('Oops Try Again!')
     }
   }
 
   return (
-    <div>
-    <Letter key={0} active={currentRow[0]} gameStatus={gameStatus} handleGameStatus={handleGameStatus} index={0}/>
-    <Letter key={1} active={currentRow[1]} gameStatus={gameStatus} handleGameStatus={handleGameStatus} index={1}/>
-    <Letter key={2} active={currentRow[2]} gameStatus={gameStatus} handleGameStatus={handleGameStatus} index={2}/>
-    <Letter key={3} active={currentRow[3]} gameStatus={gameStatus} handleGameStatus={handleGameStatus} index={3}/>
-    <Letter key={4} active={currentRow[4]} gameStatus={gameStatus} handleGameStatus={handleGameStatus} index={4}/>
-    <Letter key={5} active={currentRow[5]} gameStatus={gameStatus} handleGameStatus={handleGameStatus} index={5}/>
+    <div className="wordle">
+      <div className="board">
+        {currentRow.map((status, index) => <Letter key={index} active={status && !gameStatus} handleGameStatus={handleGameStatus} index={index} targetValue={targetWord} handleMessage={(msg) => setMessage(msg)}/>)}
+      </div>
+      <div className="message">{message}</div>
     </div>
   )
 }
