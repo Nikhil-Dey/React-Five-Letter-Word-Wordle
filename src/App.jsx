@@ -1,5 +1,6 @@
 import "./App.css";
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 
 function Square({value, feedback}){
   return (
@@ -7,11 +8,18 @@ function Square({value, feedback}){
   )
 }
 
+Square.propTypes = {
+  value: PropTypes.string.isRequired,  
+  feedback: PropTypes.string.isRequired 
+};
+
 function Letter({active, handleGameStatus, targetValue, handleMessage}){
   const [letter, setLetter] = useState("");
   const [validated, setValidated] = useState(false);
 
   useEffect(() => {
+    if(!active) return;
+
     function handleSetLetter(key){
       if (letter.length === 5) return;
       setLetter(letter + key.toUpperCase());
@@ -34,24 +42,21 @@ function Letter({active, handleGameStatus, targetValue, handleMessage}){
     }
   
     function handleKeyEvent(e){
-      if(!active){
-        return;
-      }
       const key = e.key;
   
       if (/^[a-zA-Z]$/.test(key)){
         handleSetLetter(key);
       }
-      else if (key == 'Backspace'){
+      else if (key === 'Backspace'){
         handleRemovingLetter();
       }
-      else if (key == 'Enter') {
+      else if (key === 'Enter') {
         handleValidateString();
       }
     }
     window.addEventListener('keydown', handleKeyEvent);
     return () => window.removeEventListener('keydown', handleKeyEvent);
-  }, [letter, active]);
+  }, [letter, active, handleGameStatus, handleMessage, targetValue]);
   
   function feedback(i){
     if(!validated){
@@ -67,38 +72,53 @@ function Letter({active, handleGameStatus, targetValue, handleMessage}){
   }
 
   return (
-    <div className="row" disabled={!active}>
-      {[0, 1, 2, 3, 4].map(i => (
+    <div className="row">
+      {Array.from({ length: 5 }).map((_,i) => (
         <Square key={i} value={letter[i] || ''} feedback={feedback(i)} />
       ))}
     </div>
   )
 }
 
+Letter.propTypes = {
+  active: PropTypes.bool.isRequired,               
+  handleGameStatus: PropTypes.func.isRequired,     
+  targetValue: PropTypes.string.isRequired,        
+  handleMessage: PropTypes.func.isRequired         
+};
+
 async function fetchRandomWord() {
-  const response = await fetch("https://random-word-api.vercel.app/api?words=1&length=5&type=uppercase");
-  const data = await response.json();
-  return data[0];
+  try {
+    const response = await fetch("https://random-word-api.vercel.app/api?words=1&length=5&type=uppercase");
+    const data = await response.json();
+    return data[0];
+  } catch (error) {
+    console.error("Error fetching the word:", error);
+    return "";
+  }
 }
 
 function Wordle(){
-  const [currentRow, setCurrentRow] = useState([true, false, false, false, false, false]);
   const [gameStatus, setGameStatus] = useState(false);
   const [index, setIndex] = useState(0);
-  const [message, setMessage] = useState('Guess Five Letter Word');
+  const [message, setMessage] = useState('Start typing the five letters and press enter for validation');
   const [targetWord, setTargetWord] = useState('');
 
   useEffect(() => {
     async function getWord() {
-      const word = await fetchRandomWord(); // Fetch a random word
-      setTargetWord(word);
+      const word = await fetchRandomWord();
+      if (word.trim()){
+        setTargetWord(word);
+      }else{
+        setMessage('Error while Loading!')
+        setIndex(6);
+      }
     }
     getWord();
   }, []);
 
   function handleGameStatus(status){
     if(status){
-      setCurrentRow(Array(6).fill(false));
       setGameStatus(status);
       setMessage('You Won')
     }else{
@@ -106,7 +126,6 @@ function Wordle(){
         setMessage(`Game Over! Your Word is ${targetWord}`);
         return;
       }
-      setCurrentRow(currentRow.map((row, i) => i === index + 1 ? true : false));
       setIndex(index + 1);
       setMessage('Oops Try Again!')
     }
@@ -114,8 +133,9 @@ function Wordle(){
 
   return (
     <div className="wordle">
+      <h2>Guess the Five Letter Word</h2>
       <div className="board">
-        {currentRow.map((status, index) => <Letter key={index} active={status && !gameStatus} handleGameStatus={handleGameStatus} targetValue={targetWord} handleMessage={(msg) => setMessage(msg)}/>)}
+        {Array.from({ length: 6 }).map((_, i) => <Letter key={i} active={ index === i && !gameStatus} handleGameStatus={handleGameStatus} targetValue={targetWord} handleMessage={(msg) => setMessage(msg)}/>)}
       </div>
       <div className="message">{message}</div>
     </div>
