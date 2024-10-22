@@ -7,7 +7,7 @@ function Square({value, feedback}){
   )
 }
 
-function Letter({active, handleGameStatus, index, targetValue, handleMessage}){
+function Letter({active, handleGameStatus, targetValue, handleMessage}){
   const [letter, setLetter] = useState("");
   const [validated, setValidated] = useState(false);
 
@@ -100,10 +100,9 @@ function Wordle(){
     if(status){
       setCurrentRow(Array(6).fill(false));
       setGameStatus(status);
-      setIndex(6);
       setMessage('You Won')
     }else{
-      if (index === 6) {
+      if (index === 5) {
         setMessage(`Game Over! Your Word is ${targetWord}`);
         return;
       }
@@ -116,7 +115,7 @@ function Wordle(){
   return (
     <div className="wordle">
       <div className="board">
-        {currentRow.map((status, index) => <Letter key={index} active={status && !gameStatus} handleGameStatus={handleGameStatus} index={index} targetValue={targetWord} handleMessage={(msg) => setMessage(msg)}/>)}
+        {currentRow.map((status, index) => <Letter key={index} active={status && !gameStatus} handleGameStatus={handleGameStatus} targetValue={targetWord} handleMessage={(msg) => setMessage(msg)}/>)}
       </div>
       <div className="message">{message}</div>
     </div>
