@@ -58,23 +58,50 @@ function Letter({active, handleGameStatus, targetValue, handleMessage}){
     return () => window.removeEventListener('keydown', handleKeyEvent);
   }, [letter, active, handleGameStatus, handleMessage, targetValue]);
   
-  function feedback(i){
+  function getFeedback(){
+    const result = Array(5).fill('');
     if(!validated){
-      return '';
+      return result;
     }
-    else if (targetValue[i] === letter[i]){
-      return 'matched';
-    } else if (targetValue.includes(letter[i])){
-      return 'diff-index';
-    }else{
-      return 'not-matched';
+
+    const targetedCount = Array(26).fill(0);
+    const guessedCount = Array(26).fill(0);
+
+    for (let i = 0; i<5; i++){
+      const targetLetter = targetValue[i];
+      const guessLetter = letter[i];
+      const pos = targetLetter.charCodeAt(0) - 'A'.charCodeAt(0);
+
+      targetedCount[pos]++;
+      if (targetLetter === guessLetter){
+        result[i] = 'matched';
+        guessedCount[pos]++;
+      }
     }
+
+    for (let i = 0; i<5; i++){
+      const guessLetter = letter[i];
+      const pos = guessLetter.charCodeAt(0) - 'A'.charCodeAt(0);
+
+      if (result[i] === 'matched') continue;
+
+      if (targetValue.includes(guessLetter) && guessedCount[pos] < targetedCount[pos]){
+        result[i] = 'diff-index';
+        guessedCount[pos]++;
+      }else{
+        result[i] = 'not-matched';
+      }
+    }
+
+    return result;
   }
+
+  const feedback = getFeedback();
 
   return (
     <div className="row">
       {Array.from({ length: 5 }).map((_,i) => (
-        <Square key={i} value={letter[i] || ''} feedback={feedback(i)} />
+        <Square key={i} value={letter[i] || ''} feedback={feedback[i]} />
       ))}
     </div>
   )
@@ -107,6 +134,7 @@ function Wordle(){
   useEffect(() => {
     async function getWord() {
       const word = await fetchRandomWord();
+      console.log(word);
       if (word.trim()){
         setTargetWord(word);
       }else{
