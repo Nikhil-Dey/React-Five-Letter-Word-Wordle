@@ -134,7 +134,7 @@ function Wordle(){
   useEffect(() => {
     async function getWord() {
       const word = await fetchRandomWord();
-      console.log(word);
+      // console.log(word);
       if (word.trim()){
         setTargetWord(word);
       }else{
